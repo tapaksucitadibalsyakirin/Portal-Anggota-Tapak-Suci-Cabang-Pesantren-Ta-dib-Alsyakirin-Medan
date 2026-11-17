@@ -1,0 +1,32 @@
+PANDUAN PORTAL TAPAK SUCI PERSITAS
+Cabang Pesantren Modern Ta'dib Alsyakirin
+
+PAKET INI ADALAH TEMPLATE TERPISAH DARI PORTAL BAITUSSALAM.
+Jangan gunakan URL/key Supabase Baitussalam. Buat proyek Supabase baru khusus PERSITAS.
+
+1. Buka index.html dan isi tiga konstanta:
+   SUPABASE_URL = URL proyek Supabase PERSITAS
+   SUPABASE_KEY = publishable key proyek PERSITAS
+   ADMIN_EMAIL = email admin utama PERSITAS
+2. Buka setup-persitas-supabase.sql. Ganti setiap ISI_EMAIL_ADMIN_PERSITAS dengan email admin utama yang sama.
+3. Jalankan SQL tersebut SATU KALI di SQL Editor proyek PERSITAS yang baru.
+4. Di Supabase Authentication, buat user admin dengan email tersebut dan password pilihan Anda. Konfirmasi email bila diperlukan. Matikan public signups.
+5. Upload index.html, logo-persitas.png, dan file lain ke ROOT repository GitHub Pages. Jangan upload ZIP sebagai ZIP.
+6. Atur Authentication > URL Configuration: Site URL ke domain GitHub Pages PERSITAS dan Redirect URL ke URL website PERSITAS.
+7. Uji website: publik bisa melihat data yang diizinkan; admin login untuk mengelola data dan dokumen privat.
+
+FITUR YANG DIBAWA DARI TEMPLATE BAITUSSALAM:
+- Dashboard statistik dan distribusi tingkatan.
+- Data siswa, kader, dan pendekar.
+- Tambah/edit/hapus anggota, pencarian, impor/ekspor Excel.
+- Upload foto profil ke bucket media.
+- Upload KTA dan ijazah resmi ke bucket privat dokumen-pribadi.
+- Dokumen privat hanya dapat dibuka admin yang emailnya ditetapkan di SQL dan index.html.
+
+PENTING:
+- Logo resmi Tapak Suci yang diberikan pengguna sudah dipasang sebagai logo portal. Jangan menghapus file logo-persitas.png.
+- Data anggota PERSITAS disimpan di proyek Supabase PERSITAS yang baru, terpisah dari Baitussalam.
+- Jangan pernah masukkan service_role key atau secret key ke index.html/GitHub.
+- Jangan membuat bucket dokumen-pribadi menjadi Public.
+- Jangan bagikan password admin utama. Buat akun operator dan kebijakan role terpisah bila nanti diperlukan.
+- SQL ini ditujukan untuk proyek Supabase baru yang kosong. Jangan jalankan pada proyek Baitussalam.

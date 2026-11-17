@@ -1,1 +1,13 @@
-# Portal-Anggota-Tapak-Suci-Cabang-Pesantren-Ta-dib-Alsyakirin-Medan
+# Portal Database Tapak Suci PERSITAS
+
+Cabang Pesantren Modern Ta'dib Alsyakirin.
+
+Template portal keanggotaan dengan dashboard, data siswa/kader/pendekar, autentikasi admin Supabase, dan penyimpanan privat KTA/ijazah.
+
+## File
+- `index.html` — aplikasi web.
+- `logo-persitas.png` — logo resmi Tapak Suci yang diberikan pengguna; dipakai pada identitas portal, favicon, dan watermark.
+- `setup-persitas-supabase.sql` — skema, RLS, view publik, dan bucket storage untuk proyek Supabase baru.
+- `PANDUAN-PERSITAS.txt` — panduan konfigurasi dan deployment.
+
+**Penting:** proyek Supabase PERSITAS harus terpisah dari proyek Baitussalam. Isi URL, publishable key, dan email admin sendiri. Jangan pernah menaruh service role/secret key di browser.
