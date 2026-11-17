@@ -156,6 +156,12 @@ dialog{border-radius:16px} .dh{background:linear-gradient(110deg,#0a4631,#14764e
 .doc-status{font-size:12px;color:#627268}
 .doc-actions{display:flex;gap:7px;flex-wrap:wrap}
 .private-note{font-size:12px;color:#64756a;line-height:1.5;margin:6px 0 0}
+
+.manage-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+.manage-item{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px}
+.manage-item h4{margin:0 0 8px;color:var(--g1)}
+.year-pill{display:inline-flex;padding:5px 11px;border-radius:999px;background:#edf6ef;color:#075c38;font-weight:700;font-size:12px}
+@media(max-width:800px){.manage-grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -186,6 +192,7 @@ const LV={
 };
 const NAMA={siswa:'Siswa',kader:'Kader',pendekar:'Pendekar'};
 let db={siswa:[],kader:[],pendekar:[]},admin=false,page='dashboard',cur=null;
+let tahunAjaran=[],pengurus=[];
 const $=id=>document.getElementById(id);
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
@@ -197,8 +204,8 @@ const PRIVATE_BUCKET='dokumen-pribadi';
 let docsByMember={},legacyKtaByMember={};
 let sb=null;
 try{if(/^https:\/\/.+\.supabase\.co/.test(SUPABASE_URL)&&!/ISI_|PROJECT-REF/.test(SUPABASE_KEY+SUPABASE_URL)&&typeof supabase!=='undefined')sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY)}catch(e){console.error(e)}
-const fromRow=d=>({id:d.id,nama:d.nama,jk:d.jk||'Laki-laki',tahun:d.tahun??'',tingkat:d.tingkat,kta:d.kta||'',alamat:d.alamat||'',kontak:d.kontak||'',foto:d.foto||'',ktaImg:d.kta_img||'',keg:d.keg||[]});
-const toRow=(t,r)=>({jenjang:t,nama:r.nama,jk:r.jk,tahun:parseInt(r.tahun)||null,tingkat:r.tingkat,kta:r.kta,alamat:r.alamat,kontak:r.kontak,foto:r.foto||null,keg:r.keg||[]});
+const fromRow=d=>({id:d.id,nama:d.nama,jk:d.jk||'Laki-laki',tahun:d.tahun??'',tahun_ajaran_id:d.tahun_ajaran_id||'',tingkat:d.tingkat,kta:d.kta||'',alamat:d.alamat||'',kontak:d.kontak||'',foto:d.foto||'',ktaImg:d.kta_img||'',keg:d.keg||[]});
+const toRow=(t,r)=>({jenjang:t,nama:r.nama,jk:r.jk,tahun:parseInt(r.tahun)||null,tahun_ajaran_id:r.tahun_ajaran_id||null,tingkat:r.tingkat,kta:r.kta,alamat:r.alamat,kontak:r.kontak,foto:r.foto||null,keg:r.keg||[]});
 function isAdminSession(session){return (session?.user?.email||'').toLowerCase()===ADMIN_EMAIL.toLowerCase()}
 async function loadPrivateDocs(){
  docsByMember={};
@@ -215,6 +222,10 @@ async function load(){
  const {data,error}=await sb.from(table).select('*').order('nama');
  if(error){console.error(error);return alert('Gagal memuat data: '+error.message)}
  db={siswa:[],kader:[],pendekar:[]};legacyKtaByMember={};(data||[]).forEach(d=>{if(db[d.jenjang])db[d.jenjang].push(fromRow(d));if(admin&&d.kta_img)legacyKtaByMember[d.id]=d.kta_img});
+ const {data:taData,error:taErr}=await sb.from('tahun_ajaran').select('*').order('mulai_tahun',{ascending:false});
+ if(!taErr)tahunAjaran=taData||[];else console.error('Tahun ajaran:',taErr.message);
+ const {data:pgData,error:pgErr}=await sb.from('pengurus').select('*').order('urutan',{ascending:true});
+ if(!pgErr)pengurus=pgData||[];else console.error('Pengurus:',pgErr.message);
  await loadPrivateDocs();
 }
 async function uploadPrivateDoc(memberId,kind,file){
@@ -285,7 +296,7 @@ function img(file,max){return new Promise(r=>{const f=new FileReader();f.onload=
 
 /* ---------- Navigasi ---------- */
 function nav(){
- const items=[['dashboard','🏠  Beranda'],['siswa','🎓  Data Siswa'],['kader','🛡️  Data Kader'],['pendekar','🥋  Data Pendekar'],['pengaturan','⚙️  Pengaturan']];
+ const items=[['dashboard','🏠  Beranda'],['siswa','🎓  Data Siswa'],['kader','🛡️  Data Kader'],['pendekar','🥋  Data Pendekar'],['pengurus','🏛️  Susunan Pengurus'],['tahunajaran','📚  Tahun Ajaran'],['pengaturan','⚙️  Pengaturan']];
  $('nav').innerHTML=items.map(([k,t])=>`<button class="${page===k?'on':''}" onclick="go('${k}')">${t}</button>`).join('');
  $('loginBtn').textContent=admin?'Keluar admin':'Masuk admin';
 }
@@ -311,6 +322,8 @@ function render0(){
  const a=$('actions');a.innerHTML='';
  if(page==='dashboard')return dash();
  if(page==='pengaturan')return settings();
+ if(page==='tahunajaran')return yearPage();
+ if(page==='pengurus')return managementPage();
  listView(page);
 }
 
@@ -345,14 +358,14 @@ function listView(t){
  $('title').textContent='Data '+NAMA[t];
  if(admin)$('actions').innerHTML=`<button class="btn" onclick="openForm('${t}')">+ Tambah ${NAMA[t]}</button><button class="btn gold" onclick="tpl('${t}')">Template Excel</button><button class="btn gold" onclick="impIn.dataset.t='${t}';impIn.click()">Impor Excel</button><button class="btn gold" onclick="exp('${t}')">Ekspor</button><input type="file" id="impIn" accept=".xlsx,.xls,.csv" hidden onchange="imp(this)">`;
  else $('actions').innerHTML=`<button class="btn gold" onclick="exp('${t}')">Ekspor Excel</button>`;
- $('view').innerHTML=`<div class="card"><div class="bar"><input id="q" placeholder="Cari nama, alamat, atau kode KTA..." oninput="tampilRows('${t}')"><select id="fl" onchange="tampilRows('${t}')"><option value="">Semua tingkatan</option>${LV[t].map(l=>`<option>${esc(l)}</option>`).join('')}</select></div><div class="tw" id="tbl"></div></div>`;
+ $('view').innerHTML=`<div class="card"><div class="bar"><input id="q" placeholder="Cari nama, alamat, atau kode KTA..." oninput="tampilRows('${t}')"><select id="fl" onchange="tampilRows('${t}')"><option value="">Semua tingkatan</option>${LV[t].map(l=>`<option>${esc(l)}</option>`).join('')}</select><select id="fy" onchange="tampilRows('${t}')"><option value="">Semua tahun ajaran</option>${tahunAjaran.map(y=>`<option value="${y.id}">${esc(y.nama)}</option>`).join('')}</select></div><div class="tw" id="tbl"></div></div>`;
  tampilRows(t);
 }
 function tampilRows(t){
  const q=($('q').value||'').toLowerCase(),f=$('fl').value;
  const d=db[t].filter(x=>(!f||x.tingkat===f)&&[x.nama,x.alamat,x.kta].join(' ').toLowerCase().includes(q));
- $('tbl').innerHTML=d.length?`<table><tr><th>No</th><th>Foto</th><th>Nama</th><th>L/P</th><th>Masuk</th><th>Tingkatan terakhir</th><th>KTA</th><th>Aksi</th></tr>${d.map((x,i)=>`<tr>
- <td>${i+1}</td><td>${x.foto?`<img class="av" src="${x.foto}" alt="">`:'<div class="av"></div>'}</td><td><b>${esc(x.nama)}</b></td><td>${x.jk==='Laki-laki'?'L':'P'}</td><td>${esc(x.tahun)}</td><td><span class="tag">${esc(x.tingkat)}</span></td>
+ $('tbl').innerHTML=d.length?`<table><tr><th>No</th><th>Foto</th><th>Nama</th><th>L/P</th><th>Masuk</th><th>Tahun Ajaran</th><th>Tingkatan terakhir</th><th>KTA</th><th>Aksi</th></tr>${d.map((x,i)=>`<tr>
+ <td>${i+1}</td><td>${x.foto?`<img class="av" src="${x.foto}" alt="">`:'<div class="av"></div>'}</td><td><b>${esc(x.nama)}</b></td><td>${x.jk==='Laki-laki'?'L':'P'}</td><td>${esc(x.tahun)}</td><td><span class="year-pill">${esc(tahunAjaran.find(y=>y.id===x.tahun_ajaran_id)?.nama||'-')}</span></td><td><span class="tag">${esc(x.tingkat)}</span></td>
  <td>${esc(x.kta||'-')}</td>
  <td style="white-space:nowrap"><button class="btn sm" onclick="detail('${t}','${x.id}')">Detail</button>${admin?` <button class="btn sm gold" onclick="openForm('${t}','${x.id}')">Ubah</button> <button class="btn sm red" onclick="del('${t}','${x.id}')">Hapus</button>`:''}</td></tr>`).join('')}</table>`:`<div class="empty">Belum ada data ${NAMA[t].toLowerCase()}.${admin?' Klik "Tambah" atau "Impor Excel".':' Admin dapat menambahkan data setelah masuk.'}</div>`;
 }
@@ -384,6 +397,7 @@ function openForm(t,id){
  <label class="w">Nama lengkap<input id="fn" value="${esc(x.nama)}"></label>
  <label>Jenis kelamin<select id="fj"><option>Laki-laki</option><option ${x.jk==='Perempuan'?'selected':''}>Perempuan</option></select></label>
  <label>Tahun masuk Tapak Suci<input id="ft" type="number" min="1963" max="2100" value="${esc(x.tahun||new Date().getFullYear())}"></label>
+ <label class="w">Tahun ajaran<select id="fta"><option value="">Belum ditentukan</option>${tahunAjaran.map(y=>`<option value="${y.id}" ${x.tahun_ajaran_id===y.id?'selected':''}>${esc(y.nama)}</option>`).join('')}</select><span class="hint">Kelompok tahun ajaran dikelola melalui menu Tahun Ajaran.</span></label>
  <label class="w">Tingkatan terakhir<select id="fl2">${LV[t].map(l=>`<option ${x.tingkat===l?'selected':''}>${esc(l)}</option>`).join('')}</select></label>
  <label class="w">${sis?'Kode KTA (diisi manual oleh admin)':'No. KTA resmi (diterbitkan Pimpinan Pusat)'}<input id="fk" value="${esc(x.kta)}" placeholder="Nomor KTA bila tersedia"></label>
  <label class="w">Alamat<input id="fa" value="${esc(x.alamat)}"></label>
@@ -401,7 +415,7 @@ async function saveF(){
  const nama=$('fn').value.trim();if(!nama)return alert('Nama wajib diisi.');
  const btn=document.querySelector('#dlg .df .btn:last-child');btn.disabled=true;btn.textContent='Menyimpan...';
  try{
-  const r={nama,jk:$('fj').value,tahun:$('ft').value,tingkat:$('fl2').value,kta:$('fk').value.trim(),alamat:$('fa').value.trim(),kontak:$('fc').value.trim(),foto:await up(cur.foto),keg:await Promise.all(cur.keg.map(up))};
+  const r={nama,jk:$('fj').value,tahun:$('ft').value,tahun_ajaran_id:$('fta')?.value||null,tingkat:$('fl2').value,kta:$('fk').value.trim(),alamat:$('fa').value.trim(),kontak:$('fc').value.trim(),foto:await up(cur.foto),keg:await Promise.all(cur.keg.map(up))};
   let memberId=cur.id;
   if(cur.id){const {error}=await sb.from('anggota').update(toRow(cur.t,r)).eq('id',cur.id);if(error)throw error;}
   else {const {data,error}=await sb.from('anggota').insert(toRow(cur.t,r)).select('id').single();if(error)throw error;memberId=data.id;}
@@ -453,6 +467,72 @@ function imp(el){
  rd.readAsArrayBuffer(f);
 }
 
+
+/* ---------- Pengelolaan tahun ajaran ---------- */
+async function yearPage(){
+ $('title').textContent='Tahun Ajaran';
+ $('actions').innerHTML=admin?'<button class="btn" onclick="yearDialog()">+ Tambah Tahun Ajaran</button>':'';
+ $('view').innerHTML=`<div class="card"><h3>Kelompok Tahun Ajaran</h3><p class="hint">Semua jenjang anggota dapat dikelompokkan berdasarkan tahun ajaran.</p>
+ ${tahunAjaran.length?`<div class="manage-grid">${tahunAjaran.map(y=>`<div class="manage-item"><h4>${esc(y.nama)}</h4><div class="hint">${y.aktif?'Aktif':'Arsip'}</div>${admin?`<p><button class="btn sm gold" onclick="yearDialog('${y.id}')">Ubah</button> <button class="btn sm red" onclick="deleteYear('${y.id}')">Hapus</button></p>`:''}</div>`).join('')}</div>`:'<div class="empty">Belum ada tahun ajaran.</div>'}</div>`;
+}
+function yearDialog(id=''){
+ const y=id?tahunAjaran.find(v=>v.id===id):{};
+ $('dlg').innerHTML=`<div class="dh">${id?'Ubah':'Tambah'} Tahun Ajaran</div><div class="db"><div class="f">
+ <label class="w">Nama tahun ajaran<input id="yn" placeholder="2026/2027" value="${esc(y.nama||'')}"></label>
+ <label>Tahun mulai<input id="ym" type="number" value="${esc(y.mulai_tahun||new Date().getFullYear())}"></label>
+ <label>Status<select id="ya"><option value="true" ${y.aktif!==false?'selected':''}>Aktif</option><option value="false" ${y.aktif===false?'selected':''}>Arsip</option></select></label>
+ </div></div><div class="df"><button class="btn red" onclick="dlg.close()">Batal</button><button class="btn" onclick="saveYear('${id}')">Simpan</button></div>`;
+ $('dlg').showModal();
+}
+async function saveYear(id){
+ const nama=$('yn').value.trim(),mulai_tahun=parseInt($('ym').value),aktif=$('ya').value==='true';
+ if(!/^\d{4}\/\d{4}$/.test(nama))return alert('Gunakan format seperti 2026/2027.');
+ const payload={nama,mulai_tahun,aktif};
+ const {error}=id?await sb.from('tahun_ajaran').update(payload).eq('id',id):await sb.from('tahun_ajaran').insert(payload);
+ if(error)return alert('Gagal menyimpan: '+error.message);
+ dlg.close();await load();render();
+}
+async function deleteYear(id){
+ if(!confirm('Hapus tahun ajaran ini?'))return;
+ const {error}=await sb.from('tahun_ajaran').delete().eq('id',id);
+ if(error)return alert('Gagal menghapus: '+error.message);
+ await load();render();
+}
+
+/* ---------- Susunan pengurus ---------- */
+const JABATAN_PENGURUS=['Pembina','Ketua Cabang','Pelatih Cabang','Wakil Ketua','Sekretaris','Wakil Sekretaris','Bendahara','Wakil Bendahara','Ketua Bidang Organisasi','Ketua Bidang Pembinaan Prestasi','Anggota'];
+async function managementPage(){
+ $('title').textContent='Susunan Pengurus';
+ $('actions').innerHTML=admin?'<button class="btn" onclick="pengurusDialog()">+ Tambah Pengurus</button>':'';
+ const prior=pengurus.filter(x=>['Pembina','Ketua Cabang','Pelatih Cabang'].includes(x.jabatan));
+ const daily=pengurus.filter(x=>!['Pembina','Ketua Cabang','Pelatih Cabang'].includes(x.jabatan));
+ const cards=a=>a.length?a.map(x=>`<div class="manage-item"><h4>${esc(x.jabatan)}</h4><b>${esc(x.nama)}</b>${x.periode?`<div class="hint">Periode ${esc(x.periode)}</div>`:''}${x.keterangan?`<p class="hint">${esc(x.keterangan)}</p>`:''}${admin?`<button class="btn sm gold" onclick="pengurusDialog('${x.id}')">Ubah</button> <button class="btn sm red" onclick="deletePengurus('${x.id}')">Hapus</button>`:''}</div>`).join(''):'<div class="empty">Belum diisi.</div>';
+ $('view').innerHTML=`<div class="card"><h3>Pembina dan Pimpinan Cabang</h3><p class="hint">Ditampilkan sebelum susunan pengurus harian.</p><div class="manage-grid">${cards(prior)}</div><h3 style="margin-top:28px">Susunan Pengurus Harian</h3><div class="manage-grid">${cards(daily)}</div></div>`;
+}
+function pengurusDialog(id=''){
+ const x=id?pengurus.find(v=>v.id===id):{};
+ $('dlg').innerHTML=`<div class="dh">${id?'Ubah':'Tambah'} Pengurus</div><div class="db"><div class="f">
+ <label class="w">Jabatan<select id="pj">${JABATAN_PENGURUS.map(j=>`<option ${x.jabatan===j?'selected':''}>${j}</option>`).join('')}</select></label>
+ <label class="w">Nama lengkap<input id="pn" value="${esc(x.nama||'')}"></label>
+ <label>Periode<input id="pp" value="${esc(x.periode||'')}" placeholder="2026–2029"></label>
+ <label>Keterangan<input id="pk" value="${esc(x.keterangan||'')}"></label>
+ <label>Urutan tampil<input id="pu" type="number" value="${esc(x.urutan??100)}"></label>
+ </div></div><div class="df"><button class="btn red" onclick="dlg.close()">Batal</button><button class="btn" onclick="savePengurus('${id}')">Simpan</button></div>`;
+ $('dlg').showModal();
+}
+async function savePengurus(id){
+ const nama=$('pn').value.trim();if(!nama)return alert('Nama wajib diisi.');
+ const payload={jabatan:$('pj').value,nama,periode:$('pp').value.trim(),keterangan:$('pk').value.trim(),urutan:parseInt($('pu').value)||100};
+ const {error}=id?await sb.from('pengurus').update(payload).eq('id',id):await sb.from('pengurus').insert(payload);
+ if(error)return alert('Gagal menyimpan pengurus: '+error.message);
+ dlg.close();await load();render();
+}
+async function deletePengurus(id){
+ if(!confirm('Hapus data pengurus ini?'))return;
+ const {error}=await sb.from('pengurus').delete().eq('id',id);
+ if(error)return alert(error.message);await load();render();
+}
+
 /* ---------- Pengaturan ---------- */
 async function settings(){
  $('title').textContent='Pengaturan';
@@ -466,7 +546,7 @@ async function cp(){
 }
 
 /* ---------- Tombol kembali & navigasi riwayat ---------- */
-const PAGES=['dashboard','siswa','kader','pendekar','pengaturan'];
+const PAGES=['dashboard','siswa','kader','pendekar','pengurus','tahunajaran','pengaturan'];
 function backBtn(){if(page!=='dashboard')$('actions').insertAdjacentHTML('afterbegin','<button class="btn gold" onclick="go(\'dashboard\')">&larr; Kembali ke Beranda</button>')}
 const _render=render;render=function(){_render();backBtn()};
 window.addEventListener('hashchange',()=>{const p=location.hash.slice(1);if(PAGES.includes(p)&&p!==page){page=p;nav();render()}});
