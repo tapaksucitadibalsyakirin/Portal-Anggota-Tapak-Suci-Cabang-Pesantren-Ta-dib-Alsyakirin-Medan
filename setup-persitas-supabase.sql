@@ -39,14 +39,14 @@ alter table public.dokumen_anggota enable row level security;
 drop policy if exists "persitas_admin_anggota_all" on public.anggota;
 create policy "persitas_admin_anggota_all" on public.anggota
 for all to authenticated
-using (lower(coalesce(auth.jwt()->>'email','')) = lower('ISI_EMAIL_ADMIN_PERSITAS'))
-with check (lower(coalesce(auth.jwt()->>'email','')) = lower('ISI_EMAIL_ADMIN_PERSITAS'));
+using (lower(coalesce(auth.jwt()->>'email','')) = lower('tapaksucitadibalsyakirin@gmail.com'))
+with check (lower(coalesce(auth.jwt()->>'email','')) = lower('tapaksucitadibalsyakirin@gmail.com'));
 
 drop policy if exists "persitas_admin_dokumen_all" on public.dokumen_anggota;
 create policy "persitas_admin_dokumen_all" on public.dokumen_anggota
 for all to authenticated
-using (lower(coalesce(auth.jwt()->>'email','')) = lower('ISI_EMAIL_ADMIN_PERSITAS'))
-with check (lower(coalesce(auth.jwt()->>'email','')) = lower('ISI_EMAIL_ADMIN_PERSITAS'));
+using (lower(coalesce(auth.jwt()->>'email','')) = lower('tapaksucitadibalsyakirin@gmail.com'))
+with check (lower(coalesce(auth.jwt()->>'email','')) = lower('tapaksucitadibalsyakirin@gmail.com'));
 
 -- View publik sengaja tidak memuat kolom kta_img maupun metadata dokumen.
 drop view if exists public.anggota_publik;
@@ -65,27 +65,27 @@ on conflict (id) do update set public=false;
 
 drop policy if exists "persitas_admin_media_upload" on storage.objects;
 create policy "persitas_admin_media_upload" on storage.objects for insert to authenticated
-with check (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'));
+with check (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'));
 drop policy if exists "persitas_admin_media_update" on storage.objects;
 create policy "persitas_admin_media_update" on storage.objects for update to authenticated
-using (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'))
-with check (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'));
+using (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'))
+with check (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'));
 drop policy if exists "persitas_admin_media_delete" on storage.objects;
 create policy "persitas_admin_media_delete" on storage.objects for delete to authenticated
-using (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'));
+using (bucket_id='media' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'));
 
 drop policy if exists "persitas_admin_private_docs_select" on storage.objects;
 create policy "persitas_admin_private_docs_select" on storage.objects for select to authenticated
-using (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'));
+using (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'));
 drop policy if exists "persitas_admin_private_docs_insert" on storage.objects;
 create policy "persitas_admin_private_docs_insert" on storage.objects for insert to authenticated
-with check (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'));
+with check (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'));
 drop policy if exists "persitas_admin_private_docs_update" on storage.objects;
 create policy "persitas_admin_private_docs_update" on storage.objects for update to authenticated
-using (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'))
-with check (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'));
+using (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'))
+with check (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'));
 drop policy if exists "persitas_admin_private_docs_delete" on storage.objects;
 create policy "persitas_admin_private_docs_delete" on storage.objects for delete to authenticated
-using (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('ISI_EMAIL_ADMIN_PERSITAS'));
+using (bucket_id='dokumen-pribadi' and lower(coalesce(auth.jwt()->>'email',''))=lower('tapaksucitadibalsyakirin@gmail.com'));
 
 -- Pastikan signup publik dimatikan di Authentication > Settings.

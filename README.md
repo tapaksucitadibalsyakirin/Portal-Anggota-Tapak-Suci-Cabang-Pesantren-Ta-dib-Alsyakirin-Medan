@@ -11,3 +11,6 @@ Template portal keanggotaan dengan dashboard, data siswa/kader/pendekar, autenti
 - `PANDUAN-PERSITAS.txt` — panduan konfigurasi dan deployment.
 
 **Penting:** proyek Supabase PERSITAS harus terpisah dari proyek Baitussalam. Isi URL, publishable key, dan email admin sendiri. Jangan pernah menaruh service role/secret key di browser.
+
+
+Konfigurasi Supabase PERSITAS telah diisi untuk project https://aogeibkmyobqnqcpjhzn.supabase.co dan admin utama tapaksucitadibalsyakirin@gmail.com. Jalankan setup-persitas-supabase.sql satu kali pada proyek baru sebelum login.

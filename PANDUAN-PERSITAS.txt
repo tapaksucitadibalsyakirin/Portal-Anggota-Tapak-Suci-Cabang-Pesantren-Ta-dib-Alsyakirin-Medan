@@ -8,7 +8,7 @@ Jangan gunakan URL/key Supabase Baitussalam. Buat proyek Supabase baru khusus PE
    SUPABASE_URL = URL proyek Supabase PERSITAS
    SUPABASE_KEY = publishable key proyek PERSITAS
    ADMIN_EMAIL = email admin utama PERSITAS
-2. Buka setup-persitas-supabase.sql. Ganti setiap ISI_EMAIL_ADMIN_PERSITAS dengan email admin utama yang sama.
+2. Buka setup-persitas-supabase.sql. Ganti setiap tapaksucitadibalsyakirin@gmail.com dengan email admin utama yang sama.
 3. Jalankan SQL tersebut SATU KALI di SQL Editor proyek PERSITAS yang baru.
 4. Di Supabase Authentication, buat user admin dengan email tersebut dan password pilihan Anda. Konfirmasi email bila diperlukan. Matikan public signups.
 5. Upload index.html, logo-persitas.png, dan file lain ke ROOT repository GitHub Pages. Jangan upload ZIP sebagai ZIP.
@@ -30,3 +30,10 @@ PENTING:
 - Jangan membuat bucket dokumen-pribadi menjadi Public.
 - Jangan bagikan password admin utama. Buat akun operator dan kebijakan role terpisah bila nanti diperlukan.
 - SQL ini ditujukan untuk proyek Supabase baru yang kosong. Jangan jalankan pada proyek Baitussalam.
+
+
+KONFIGURASI PROYEK PERSITAS
+Project URL: https://aogeibkmyobqnqcpjhzn.supabase.co
+Admin utama: tapaksucitadibalsyakirin@gmail.com
+Publishable key sudah dimasukkan ke index.html.
+Jangan membagikan Secret Key atau password database.
